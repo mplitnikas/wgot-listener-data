@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  wgot-listeners-data
+
+  SAM template for service to track web radio listener stats
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  IcecastScrapeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: scraper/
+      Handler: app.lambda_handler
+      Runtime: python3.6
+      Environment:
+        Variables:
+          StatsTable: !Ref ListenerTable
+      Events:
+
+  ListenerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+      - AttributeName: timestamp
+        KeyType: HASH
+      - AttributeName: listeners
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: timestamp
+        AttributeType: N
+      - AttributeName: listeners
+        AttributeType: N
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  TimerEvent:
+    Type: AWS::Events::Rule
+    DependsOn: IcecastScrapeFunction
+    Properties:
+      ScheduleExpression: rate(5 minutes)
+      Targets:
+      - Id: IcecastScrapeFunction
+        Arn: !GetAtt IcecastScrapeFunction.Arn
+
+Outputs:
+    IcecastScrapeFunction:
+      Description: "Function to scrape icecast data from pacifica"
+      Value: !GetAtt IcecastScrapeFunction.Arn
+    IcecastDataFunctionIamRole:
+      Description: "Implicit IAM Role created for icecast scrape function"
+      Value: !GetAtt IcecastScrapeFunction.Arn
+    IcecastDataListenersTable:
+      Description: "Listeners data per timestamp from pacifica api fetches"
+      Value: !GetAtt ListenerTable.Arn
