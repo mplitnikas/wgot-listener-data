@@ -1,42 +1,34 @@
-import json
+import os
+import requests
 
-# import requests
-
+database = os.environ.get('StatsTable')
+url = os.environ.get('ListenersUrl')
+#url="http://pacificaservice.org:8000/status-json.xsl"
 
 def lambda_handler(event, context):
-    """Sample pure Lambda function
+    if not database:
+        raise Exception('database env variable not set: StatsTable')
+    if not url:
+        raise Exception('url env variable not set: ListenersUrl')
 
-    Parameters
-    ----------
-    event: dict, required
-        API Gateway Lambda Proxy Input Format
+    current_listeners = fetch_listeners(url)
 
-        Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
 
-    context: object, required
-        Lambda Context runtime methods and attributes
+def fetch_listeners(url):
+    resp = requests.get(url)
+    #error handling if 400
+    #data = json.loads(resp.content.decode('utf-8'))
+    data = resp.json()
 
-        Context doc: https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html
+    feeds = data['icestats']['source']
 
-    Returns
-    ------
-    API Gateway Lambda Proxy Output Format: dict
+    total_listeners = 0
+    for feed in feeds:
+        if feed.get('server_name') and 'WGOT' in feed.get('server_name'):
+            total_listeners += ( feed.get('listeners') or 0 )
 
-        Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
-    """
+    return total_listeners
 
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "message": "hello world",
-            # "location": ip.text.replace("\n", "")
-        }),
-    }
+def update_db(record):
+    # expect object {'timestamp': int, 'listeners': int}
+    

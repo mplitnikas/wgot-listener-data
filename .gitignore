@@ -243,5 +243,6 @@ $RECYCLE.BIN/
 
 # added for AWS resources
 packaged.yaml
+*.swp
 
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode

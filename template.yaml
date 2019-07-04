@@ -9,6 +9,11 @@ Globals:
   Function:
     Timeout: 3
 
+Parameters:
+  ListenersUrl:
+    Description: "Icecast api url to fetch listener data from"
+    Type: String
+
 Resources:
   IcecastScrapeFunction:
     Type: AWS::Serverless::Function
@@ -19,7 +24,9 @@ Resources:
       Environment:
         Variables:
           StatsTable: !Ref ListenerTable
+          ListenersUrl: !Ref ListenersUrl
       Events:
+
 
   ListenerTable:
     Type: AWS::DynamoDB::Table
