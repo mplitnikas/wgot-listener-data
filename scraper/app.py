@@ -3,6 +3,7 @@ import requests
 
 database = os.environ.get('StatsTable')
 url = os.environ.get('ListenersUrl')
+callsign = os.environ.get('StationCallsign')
 #url="http://pacificaservice.org:8000/status-json.xsl"
 
 def lambda_handler(event, context):
@@ -24,7 +25,7 @@ def fetch_listeners(url):
 
     total_listeners = 0
     for feed in feeds:
-        if feed.get('server_name') and 'WGOT' in feed.get('server_name'):
+        if feed.get('server_name') and callsign in feed.get('server_name'):
             total_listeners += ( feed.get('listeners') or 0 )
 
     return total_listeners

@@ -13,6 +13,11 @@ Parameters:
   ListenersUrl:
     Description: "Icecast api url to fetch listener data from"
     Type: String
+  StationCallsign:
+    Description: "Callsign of station as listed in icecast feed"
+    Type: String
+    AllowedPattern: ^[A-Z]{4}$
+    ConstraintDescription: "Must be FCC callsign, four capital letters"
 
 Resources:
   IcecastScrapeFunction:
@@ -25,7 +30,12 @@ Resources:
         Variables:
           StatsTable: !Ref ListenerTable
           ListenersUrl: !Ref ListenersUrl
+          StationCallsign: !Ref StationCallsign
       Events:
+
+  LambdaDynamoRole:
+    Type: AWS::IAM::Role
+    Properties:
 
 
   ListenerTable:
