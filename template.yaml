@@ -31,7 +31,6 @@ Resources:
           StatsTable: !Ref ListenerTable
           ListenersUrl: !Ref ListenersUrl
           StationCallsign: !Ref StationCallsign
-      Events:
       Role: !GetAtt LambdaDynamoRole.Arn
 
   ListenerTable:
@@ -55,7 +54,7 @@ Resources:
     Type: AWS::Events::Rule
     DependsOn: IcecastScrapeFunction
     Properties:
-      ScheduleExpression: rate(5 minutes)
+      ScheduleExpression: cron(0/5 * * * ? *)
       Targets:
       - Id: IcecastScrapeFunction
         Arn: !GetAtt IcecastScrapeFunction.Arn
@@ -80,6 +79,14 @@ Resources:
               - Effect: "Allow"
                 Action: "dynamodb:*"
                 Resource: !GetAtt ListenerTable.Arn
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref IcecastScrapeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TimerEvent.Arn
 
 Outputs:
     IcecastScrapeFunction:
