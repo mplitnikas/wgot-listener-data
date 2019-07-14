@@ -1,24 +1,19 @@
 import os
-import requests
+from botocore.vendored import requests
+import boto3
 
-database = os.environ.get('StatsTable')
+database_resource = os.environ.get('StatsTable')
+db_client = boto3.client('dynamodb')
 url = os.environ.get('ListenersUrl')
 callsign = os.environ.get('StationCallsign')
-#url="http://pacificaservice.org:8000/status-json.xsl"
 
 def lambda_handler(event, context):
-    if not database:
-        raise Exception('database env variable not set: StatsTable')
-    if not url:
-        raise Exception('url env variable not set: ListenersUrl')
-
     current_listeners = fetch_listeners(url)
-
+    add_db_entry(database, current_listeners)
 
 def fetch_listeners(url):
     resp = requests.get(url)
     #error handling if 400
-    #data = json.loads(resp.content.decode('utf-8'))
     data = resp.json()
 
     feeds = data['icestats']['source']
@@ -30,6 +25,10 @@ def fetch_listeners(url):
 
     return total_listeners
 
-def update_db(record):
+def add_db_entry(record):
     # expect object {'timestamp': int, 'listeners': int}
-    
+    timestamp = record.get('timestamp')
+    listeners = record.get('listeners')
+    if not timestamp or not listeners:
+        return
+    # insert item into db

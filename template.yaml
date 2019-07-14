@@ -32,11 +32,7 @@ Resources:
           ListenersUrl: !Ref ListenersUrl
           StationCallsign: !Ref StationCallsign
       Events:
-
-  LambdaDynamoRole:
-    Type: AWS::IAM::Role
-    Properties:
-
+      Role: !GetAtt LambdaDynamoRole.Arn
 
   ListenerTable:
     Type: AWS::DynamoDB::Table
@@ -64,12 +60,30 @@ Resources:
       - Id: IcecastScrapeFunction
         Arn: !GetAtt IcecastScrapeFunction.Arn
 
+  LambdaDynamoRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+                - "edgelambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "listeners-update-dynamo"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "dynamodb:*"
+                Resource: !GetAtt ListenerTable.Arn
+
 Outputs:
     IcecastScrapeFunction:
       Description: "Function to scrape icecast data from pacifica"
-      Value: !GetAtt IcecastScrapeFunction.Arn
-    IcecastDataFunctionIamRole:
-      Description: "Implicit IAM Role created for icecast scrape function"
       Value: !GetAtt IcecastScrapeFunction.Arn
     IcecastDataListenersTable:
       Description: "Listeners data per timestamp from pacifica api fetches"
