@@ -1,6 +1,7 @@
 import os
 from botocore.vendored import requests
 import boto3
+import time
 
 database_resource = os.environ.get('StatsTable')
 db_client = boto3.client('dynamodb')
@@ -8,8 +9,9 @@ url = os.environ.get('ListenersUrl')
 callsign = os.environ.get('StationCallsign')
 
 def lambda_handler(event, context):
-    current_listeners = fetch_listeners(url)
-    add_db_entry(database, current_listeners)
+    current_listeners = str(fetch_listeners(url))
+    timestamp = str(int(time.time()))
+    add_db_entry(timestamp, current_listeners)
 
 def fetch_listeners(url):
     resp = requests.get(url)
@@ -25,10 +27,12 @@ def fetch_listeners(url):
 
     return total_listeners
 
-def add_db_entry(record):
-    # expect object {'timestamp': int, 'listeners': int}
-    timestamp = record.get('timestamp')
-    listeners = record.get('listeners')
+def add_db_entry(timestamp, listeners):
     if not timestamp or not listeners:
         return
-    # insert item into db
+    db_client.put_item(
+        TableName=database_resource,
+        Item={
+            'timestamp': { 'N': timestamp },
+            'listeners': { 'N': listeners }
+    })
